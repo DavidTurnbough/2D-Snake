@@ -1,3 +1,9 @@
+//******************************************************************************
+// Name: David Turnbough
+// Date: May 03, 2020 Sunday
+// YouTube: Java Tutorial How to Develop Game in Java (Snake Game)
+//https://www.youtube.com/watch?v=_SqnzvJuKiA
+//******************************************************************************
 package pkg2dsnake;
 
 import java.awt.Color;
@@ -19,8 +25,8 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
     private final int INITIAL_SNAKE_LENGTH = 3;
     private final int INITIAL_MOVES_MADE = 0;
     private final int INITIAL_SCORE = 0;
-    private final int DELAY = 100;
-    private final int MAX_ENEMY_X_POSITIONS = 34;
+    private int DELAY = 100;
+    private final int MAX_ENEMY_X_POSITIONS = 32;
     private final int MAX_ENEMY_Y_POSITIONS = 23;
 
     // Variable Declarations.
@@ -95,6 +101,17 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
     }
 
     // Other Methods. 
+    private int setEnemyPosition(int snakePosition, int enemyPosition, int maxValue)
+    {
+        if (snakePosition != enemyPosition)
+        {
+            return enemyPosition;
+        }
+
+        return setEnemyPosition(snakePosition, random.nextInt(maxValue), maxValue);
+    }
+
+    // Overridden Methods.
     @Override
     public void paint(Graphics g)
     {
@@ -124,17 +141,21 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
         g.setColor(Color.black);
         g.fillRect(25, 75, 850, 575);
 
+        // Score
         g.setColor(Color.white);
         g.setFont(new Font("arial", Font.PLAIN, 14));
         g.drawString("Scores: " + score, 780, 30);
 
+        // Length
         g.setColor(Color.white);
         g.setFont(new Font("arial", Font.PLAIN, 14));
         g.drawString("Length: " + snakeLength, 780, 50);
 
+        // Head Icon.
         rightMouth = new ImageIcon("images/rightmouth.png");
         rightMouth.paintIcon(this, g, snakeXLength[0], snakeYLength[0]);
 
+        // Change head icon based on input.
         for (int i = 0; i < snakeLength; ++i)
         {
             if (i == 0 && right)
@@ -164,18 +185,42 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
             }
         }
 
+        // Enemy Icon.
         enemyImage = new ImageIcon("images/enemy.png");
         enemyImage.paintIcon(this, g, possibleEnemyXPosition[enemyXPosition], possibleEnemyYPosition[enemyYPosition]);
 
+        // Check for head and enemy collision.
         if ((possibleEnemyXPosition[enemyXPosition] == snakeXLength[0])
                 && possibleEnemyYPosition[enemyYPosition] == snakeYLength[0])
         {
             snakeLength++;
-            score++; 
-            
+            score++;
+            DELAY--;
+
             random = new Random();
-            this.enemyXPosition = random.nextInt(MAX_ENEMY_X_POSITIONS);
-            this.enemyYPosition = random.nextInt(MAX_ENEMY_Y_POSITIONS);
+            enemyXPosition = random.nextInt(MAX_ENEMY_X_POSITIONS);
+            this.enemyXPosition = setEnemyPosition(snakeXLength[0], enemyXPosition, MAX_ENEMY_X_POSITIONS);
+
+            enemyYPosition = random.nextInt(MAX_ENEMY_Y_POSITIONS);
+            this.enemyYPosition = setEnemyPosition(snakeYLength[0], enemyYPosition, MAX_ENEMY_Y_POSITIONS);
+        }
+        
+        for(int i = 1; i < snakeLength; ++i)
+        {
+            if(snakeXLength[i] == snakeXLength[0] && snakeYLength[i] == snakeYLength[0])
+            {
+                this.right = false;
+                this.left = false;
+                this.up = false;
+                this.down = false;
+                
+                g.setColor(Color.white);
+                g.setFont(new Font("arial", Font.BOLD, 50));
+                g.drawString("Game Over", 300, 300);
+                
+                g.setFont(new Font("arial", Font.BOLD, 20));
+                g.drawString("Press spacebar to restart", 310, 340);
+            }
         }
 
         g.dispose();
@@ -189,6 +234,14 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
     @Override
     public void keyPressed(KeyEvent e)
     {
+        // Check for input.
+        if (e.getKeyCode() == KeyEvent.VK_SPACE)
+        {
+            movesMade = INITIAL_MOVES_MADE;
+            score = INITIAL_SCORE;
+            snakeLength = INITIAL_SNAKE_LENGTH;
+            repaint();
+        }
         if (e.getKeyCode() == KeyEvent.VK_RIGHT)
         {
             movesMade++;
@@ -267,6 +320,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
     @Override
     public void actionPerformed(ActionEvent e)
     {
+        // Snake movement. 
         timer.start();
 
         if (right)
